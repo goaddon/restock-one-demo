@@ -1,0 +1,10 @@
+{% if account != nil %}
+
+  {% assign job = "create_items" | create_job: company_id: account._id %}
+
+  {% if job.error == nil %}
+    {"status": "200", "job_id": "{{ job.job_id }}"}
+  {% else %}
+    {"status": "500", "error": "{{ job.error }}"}
+  {% endif %}
+{% endif %}

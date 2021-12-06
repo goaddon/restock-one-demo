@@ -1,0 +1,61 @@
+{
+  "variants": {
+    "klass": "variants",
+    "query": {
+      "company_id": "{{ company_id }}",
+      "stock": {
+        "$lt": 0
+      },
+      "barcode": {
+        "$ne": null
+      }
+    },
+    "projection": {
+      "_id": 1,
+      "sku": 1,
+      "barcode": 1,
+      "stock": 1
+    }
+  },
+  "suppliers": {
+    "klass": "suppliers",
+    "query": {
+      "company_id": "{{ company_id }}",
+      "email": {"$ne": null}
+    },
+    "projection": {
+      "_id": 1,
+      "name": 1,
+      "email": 1
+    }
+  },
+  "matchable_items": {
+    "klass": "items",
+    "query": {
+      "company_id": "{{ company_id }}",
+      "barcode": {"$in": "{{ barcodes }}"}
+    },
+    "projection": {
+      "_id": 1,
+      "sku": 1,
+      "barcode": 1,
+      "name": 1,
+      "price": 1,
+      "stock": 1,
+      "ordered": 1,
+      "supplier_id": 1
+    }
+  },
+  "order_item": {
+    "klass": "items",
+    "query": {
+      "company_id": "{{ company_id }}",
+      "_id": "{{ _id }}"
+    },
+    "document": {
+      "$set": {
+        "ordered": "{{ ordered }}"
+      }
+    }
+  }
+}

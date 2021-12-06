@@ -1,0 +1,20 @@
+{% if params.barcodes != nil %}
+
+  {% assign barcodes  = params.barcodes | split: "," %}
+  {% assign items = nil | new_hash %}
+
+  {% for barcode in barcodes %}
+
+    {% capture name %}product-{{ barcode }}{% endcapture %}
+    {% assign item  = nil | new_hash: price: 1, stock: 1000, barcode: barcode, name: name %}
+    {% assign items = items | push_to_hash: barcode, item %}
+
+  {% endfor %}
+
+  {"items": {{ items | hash_to_json }}}
+
+{% else %}
+
+  {"items": {}}
+
+{% endif %}

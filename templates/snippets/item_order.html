@@ -1,0 +1,62 @@
+{% if job == nil %}
+  <h5 class="mb-4">{{ l.not_found }}</h5>
+{% else %}
+  {% if job.data.results.size == 0 %}
+    <h5 class="mb-4">{{ l.no_items_ordered }}</h5>
+  {% else %}
+    <h5 class="mb-4">{{ l.ordered_items }}</h5>
+    <table class="table">
+      <tbody>
+        {% for supplier in job.data.results %}
+          <tr class="bg-light">
+            <th colspan="3">
+              <b>{{ supplier.supplier_name }}</b>
+            </th>
+          </tr>
+          <tr>
+            <td>
+              <b>{{ l.barcode }}</b>
+            </td>
+            <td>
+              <b>{{ l.name }}</b>
+            </td>
+            <td>
+              <b>{{ l.amount }}</b>
+            </td>
+          </tr>
+          {% for item in supplier.items %}
+            <tr>
+              <td>{{ item.barcode | strip_html }}</td>
+              <td>
+                {% assign item_barcode = item.barcode | encrypt %}
+                {% if variants[item_barcode] != nil %}
+                  {% assign variant     = variants[item_barcode] %}
+                  {% assign product_id  = variant.product_id %}
+                  {% if product_id != nil %}
+                    {% assign product = products[product_id] %}
+                    {% if product != nil %}
+                      <a href="{{ 'variants__show' | path_for: id: variant._id }}">
+                        {{ product.name | decrypt | strip_html }}
+                        {% assign variations = "" %}
+                        {% for variation in variant.variations %}
+                          {% if variations != "" %}
+                            {% capture variations %}{{ variations }}, {% endcapture %}
+                          {% endif %}
+                          {% capture variations %}{{ variations }}{{ variation.type | decrypt | strip_html }}: {{ variation.value | decrypt | strip_html }}{% endcapture %}
+                        {% endfor %}
+                        {% if variations != "" %}
+                          &nbsp;({{ variations }})
+                        {% endif %}
+                      </a>
+                    {% endif %}
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td>{{ item.amount }}</td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endif %}

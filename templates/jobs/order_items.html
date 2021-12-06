@@ -1,0 +1,154 @@
+{% if params.company_id != nil %}
+
+  {% assign variants_query = "variants" | db_find: company_id: params.company_id %}
+
+  {% if variants_query.results_count > 0 %}
+
+    {% assign suppliers_query = "suppliers" | db_find: company_id: params.company_id %}
+
+    {% if suppliers_query.results_count > 0 %}
+
+      {% assign suppliers         = suppliers_query.results %}
+      {% assign suppliers_orders  = nil | new_hash %}
+      {% assign variants          = variants_query.results | to_hash: "barcode" %}
+      {% assign variants_items    = nil | new_hash %}
+      {% assign array             = "" | split: " " %}
+
+      {% for variant in variants %}
+        {% assign variants_items = variants_items | push_to_hash: variant[0], array %}
+      {% endfor %}
+
+      {% assign barcodes = "" %}
+
+      {% for variant in variants %}
+        {% capture barcodes %}{{ barcodes }} {{ variant[0] }}{% endcapture %}
+      {% endfor %}
+
+      {% assign barcodes              = barcodes | split: " " | uniq %}
+      {% assign matchable_items_query = "matchable_items" | db_find: company_id: params.company_id, barcodes: barcodes %}
+      {% assign matchable_items       = matchable_items_query.results %}
+
+      {% for matchable_item in matchable_items %}
+
+        {% assign barcode = matchable_item.barcode %}
+
+        {% if variants_items[barcode] != nil %}
+
+          {% assign item_ordered = matchable_item.ordered | plus: 0 %}
+
+          {% if item_ordered > 0 %}
+
+            {% assign variant         = variants[barcode] %}
+            {% assign variant_ordered = variant.ordered | plus: 0 %}
+            {% assign ordered         = variant_ordered | plus: item_ordered %}
+            {% assign variant         = variant | push_to_hash: "ordered", ordered %}
+            {% assign variants        = variants | push_to_hash: barcode, variant %}
+
+          {% endif %}
+
+          {% if matchable_item.stock != nil %}
+
+            {% assign matchup_item     = nil | new_hash: _id: matchable_item._id, sku: matchable_item.sku, name: matchable_item.name, supplier_id: matchable_item.supplier_id, price: matchable_item.price, stock: matchable_item.stock, ordered: matchable_item.ordered %}
+            {% assign barcode_matchups  = variants_items[barcode] %}
+            {% assign matchup_items     = barcode_matchups | push_to_array: matchup_item %}
+            {% assign variants_items    = variants_items | push_to_hash: barcode, matchup_items %}
+
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+
+      {% assign array = "" | split: " " %}
+
+      {% for supplier in suppliers %}
+
+        {% assign suppliers_orders = suppliers_orders | push_to_hash: supplier._id, array %}
+
+      {% endfor %}
+      {{variants_items | log}}
+      {% for variant_items in variants_items %}
+
+        {% if variant_items[1].size > 0 %}
+
+          {% assign barcode       = variant_items[0] %}
+          {% assign variant       = variants[barcode] %}
+          {% assign stock         = variant.stock | plus: 0 %}
+          {% assign ordered       = variant.ordered | plus: 0 %}
+          {% assign missing       = stock | plus: ordered %}
+          {% assign sorted_items  = variant_items[1] | sort: "price" %}
+
+          {% for item in sorted_items %}
+            {% if 0 > missing %}
+
+              {% assign orderable = missing | abs | at_most: item.stock %}
+
+              {% if orderable > 0 %}
+
+                {% assign missing           = missing | plus: orderable %}
+                {% assign ordered_item      = nil | new_hash: item_id: item._id, barcode: barcode, sku: item.sku, name: item.name, amount: orderable %}
+                {% assign item_supplier_id  = item.supplier_id %}
+                {% assign supplier_orders   = suppliers_orders[item_supplier_id] | push_to_array: ordered_item %}
+                {% assign suppliers_orders  = suppliers_orders | push_to_hash: item.supplier_id, supplier_orders %}
+                {% assign item_ordered      = item.ordered | plus: 0 %}
+                {% assign is_ordered        = item_ordered | plus: orderable %}
+                {% assign items_update      = "order_item" | db_update_one: company_id: params.company_id, _id: item._id, ordered: is_ordered %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+
+      {% for supplier in suppliers %}
+        {% assign supplier_id     = supplier._id %}
+        {% assign supplier_order  = suppliers_orders[supplier_id] %}
+        {% if supplier_order != nil and supplier_order.size > 0 %}
+          {% assign send_result = "supplier_order" | send_email: to: supplier.email, display_name: project.name, supplier_name: supplier.name, supplier_order: supplier_order %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+
+  {"results":
+    [
+      {% assign array_comma = false %}
+
+      {% for supplier in suppliers %}
+
+        {% assign supplier_id     = supplier._id %}
+        {% assign supplier_order  = suppliers_orders[supplier_id] %}
+
+        {% if supplier_order != nil and supplier_order.size > 0 %}
+
+          {% if array_comma %}
+            ,
+          {% else %}
+            {% assign array_comma = true %}
+          {% endif %}
+
+          {
+            "supplier_name": "{{ supplier.name }}",
+            "items": [
+
+              {% assign hash_comma = false %}
+
+              {% for supplier_order_line in supplier_order %}
+
+                {% if hash_comma %}
+                  ,
+                {% else %}
+                  {% assign hash_comma = true %}
+                {% endif %}
+
+                {
+                  "sku": "{{ supplier_order_line.sku | decrypt }}",
+                  "barcode": "{{ supplier_order_line.barcode | decrypt }}",
+                  "name": "{{ supplier_order_line.name | decrypt }}",
+                  "amount": {{ supplier_order_line.amount }}
+                }
+              {% endfor %}
+            ]  
+          }
+        {% endif %}
+      {% endfor %}
+    ]
+  }
+{% endif %}

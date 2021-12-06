@@ -1,0 +1,25 @@
+{
+  "destroy_supplier": {
+    "klass": "suppliers",
+    "query": {
+      "company_id": "{{ company_id }}",
+      "_id": "{{ _id }}"
+    }
+  },
+  "items": {
+    "klass": "items",
+    "query": {
+      "company_id": "{{ company_id }}",
+      "sku": {"$in": "{{ skus }}"}
+    }
+  },
+  "create_item": {
+    "klass": "items",
+    "document": {
+      "company_id": "{{ company_id }}",
+      "sku": "{{ sku }}",
+      "name": "{{ name }}",
+      "supplier_id": "{{ supplier_id }}"
+    }
+  }
+}

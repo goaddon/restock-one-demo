@@ -1,0 +1,9 @@
+{
+  "en": {
+    "ordered_items": "The following items were ordered",
+    "no_items_ordered": "No items ordered",
+    "barcode": "Barcode",
+    "name": "Name",
+    "amount": "Amount"
+  }
+}

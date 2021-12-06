@@ -1,0 +1,18 @@
+{
+  "en": {
+    "headline": "Supplier",
+    "labels": {
+      "name": "Name",
+      "url": "Inventory list URL",
+      "email": "Mail address"
+    },
+    "placeholders": {
+      "name": "Enter supplier name...",
+      "url": "Enter URL of inventory list...",
+      "email": "Enter the mail address of the supplier"
+    },
+    "buttons": {
+      "update": "Update"
+    }
+  }
+}

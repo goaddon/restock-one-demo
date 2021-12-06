@@ -1,0 +1,112 @@
+<script>
+  jobUrl = function() {
+    return "{{ 'jobs__show' | path_for: id: 'id_placeholder' }}.json";
+  };
+
+  itemOrderUrl = function() {
+    return "{{ 'item_orders__show' | path_for: id: 'id_placeholder' }}";
+  };
+
+  getTimeout = function(timeout) {
+    return Math.min(60000, timeout);
+  };
+
+  checkOrderItems = function(job_id, timeout) {
+    return setTimeout((function() {
+      timeout = getTimeout(timeout);
+      return $.ajax({
+        type: "get",
+        dataType: "json",
+        url: jobUrl().replace("id_placeholder", job_id),
+        success: function(data, status, xhr) {
+          if (data !== null) {
+            if (data.job_status === "" || data.job_status === null || data.job_status === "in_progress") {
+              $(".job-status").html("{{ l.ordering_items }}");
+              return checkOrderItems(job_id, timeout + 20);
+            } else if (data.job_status === "erred") {
+              return $(".job-status").html("{{ l.erred_ordering_items }}: " + data.error_message);
+            } else if (data.job_status === "finished") {
+              return Turbo.visit(itemOrderUrl().replace("id_placeholder", job_id));
+            }
+          }
+        }
+      });
+    }), timeout);
+  };
+
+  orderItems = function(timeout) {
+    return setTimeout((function() {
+      timeout = getTimeout(timeout);
+      return $.ajax({
+        type: "post",
+        dataType: "json",
+        url: "{{ 'item_orders__create' | path_for }}.json",
+        success: function(data, status, xhr) {
+          if (data !== null) {
+            $(".job-data").html("");
+            if (data.error_message !== undefined) {
+              return $(".job-status").html("{{ l.did_not_order_items }}: " + data.error_message);
+            } else if (data.job_id !== undefined) {
+              $(".job-status").html("{{ l.ordering_items }}");
+              return checkOrderItems(data.job_id, 500);
+            }
+          }
+        }
+      });
+    }), timeout);
+  };
+
+  checkCreateItems = function(job_id, timeout) {
+    return setTimeout((function() {
+      timeout = getTimeout(timeout);
+      return $.ajax({
+        type: "get",
+        dataType: "json",
+        url: jobUrl().replace("id_placeholder", job_id),
+        success: function(data, status, xhr) {
+          if (data !== null) {
+            if (data.job_status === null || data.job_status === "in_progress") {
+              $(".job-status").html("{{ l.getting_items }}");
+              return checkCreateItems(job_id, timeout + 20);
+            } else if (data.job_status === "finished") {
+              $(".job-status").html("{{ l.got_items }}");
+              $(".job-data").html("{{ l.data.created_items_count }}: " + data.data.created_items_count + ", {{ l.data.updated_items_count }}: " + data.data.updated_items_count + " and {{ l.data.deleted_items_count }}: " + data.data.deleted_items_count);
+              return orderItems(500);
+            }
+          }
+        }
+      });
+    }), timeout);
+  };
+
+  createItems = function() {
+    $(".compare-suppliers").hide();
+    return $.ajax({
+      type: "post",
+      dataType: "json",
+      url: "{{ 'items__create' | path_for }}.json",
+      success: function(data, status, xhr) {
+        if (data !== null) {
+          $(".restock-container").remove();
+          $(".job-status-container").show();
+          if (data.error_message !== undefined) {
+            return $(".job-status").html("{{ l.items_not_created }}: " + data.error_message);
+          } else if (data.job_id !== undefined) {
+            $(".job-status").html("{{ l.creating_items }}");
+            return checkCreateItems(data.job_id, 500);
+          }
+        }
+      }
+    });
+  };
+
+  $(document).on('turbo:load', function() {
+    if ($("body").hasClass("restock-index")) {
+      $(".compare-suppliers").off("click");
+
+      $(".compare-suppliers").click(function(e) {
+        return createItems();
+      });
+    }
+  })
+</script>

@@ -1,0 +1,9 @@
+{
+  "inventory": {
+    "method": "get",
+    "url": "{{ url }}",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "title": {
+    "en": "Restock"
+  },
+  "index": 0,
+  "paths": [
+    {
+      "controller": "restock",
+      "action": "index"
+    },
+    {
+      "controller": "restock"
+    },
+    {
+      "controller": "item_orders",
+      "action": "show"
+    }
+  ]
+}

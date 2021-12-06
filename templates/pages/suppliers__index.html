@@ -1,0 +1,8 @@
+{% if account != nil %}
+
+  {% assign suppliers_query     = "suppliers" | db_find: company_id: account._id %}
+  {% assign suppliers           = suppliers_query.results %}
+
+  {% include "suppliers" %}
+
+{% endif %}

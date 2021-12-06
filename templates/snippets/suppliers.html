@@ -1,0 +1,15 @@
+<h5 class="mb-4">{{ l.headline }}</h5>
+<form data-id="create_supplier" action="{{ 'suppliers__create' | path_for: format: 'js' }}" method="post" data-remote="true">
+  <div class="input-group">
+    <input class="form-control" type="text" name="name" placeholder="{{ l.placeholders.name }}">
+    <input class="btn btn-outline-primary" type="submit" value="{{ l.buttons.create }}">
+  </div>
+</form>
+
+<div class="mt-5" data-id="suppliers">
+  {% for supplier in suppliers %}
+    {% assign supplier_id   = supplier._id %}
+    {% assign supplier_name = supplier.name %}
+    {% include "suppliers/supplier" %}
+  {% endfor %}
+</div>

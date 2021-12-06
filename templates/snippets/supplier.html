@@ -1,0 +1,17 @@
+<h5 class="mb-4">{{ l.headline }}</h5>
+<form class="update-supplier" action="{{ 'suppliers__update' | path_for: id: supplier._id, format: 'js' }}" method="post" data-remote="true">
+  <div class="mb-3">
+    <input type="hidden" name="_method" value="patch">
+    <label for="name">{{ l.labels.name }}</label>
+    <input class="form-control me-3" type="text" name="name" placeholder="{{ l.placeholders.name }}" value="{{ supplier.name }}">
+  </div>
+  <div class="mb-3">
+    <label for="name">{{ l.labels.url }}</label>
+    <input class="form-control me-3" type="text" name="url" placeholder="{{ l.placeholders.url }}" value="{{ supplier.url }}">
+  </div>
+  <div class="mb-3">
+    <label for="name">{{ l.labels.email }}</label>
+    <input class="form-control me-3" type="text" name="email" placeholder="{{ l.placeholders.email }}" value="{{ supplier.email }}">
+  </div>
+  <input class="btn btn-outline-primary" type="submit" value="{{ l.buttons.update }}">
+</form>

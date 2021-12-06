@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "klass": "variants",
+    "query": {
+      "company_id": "{{ company_id }}",
+      "stock": {
+        "$lt": 0
+      }
+    }
+  }
+}

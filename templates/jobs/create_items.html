@@ -1,0 +1,99 @@
+{% if params.company_id != nil %}
+
+  {% assign created_items_count = 0 %}
+  {% assign updated_items_count = 0 %}
+  {% assign deleted_items_count = 0 %}
+  {% assign variants_query      = "variants" | db_find: company_id: params.company_id %}
+
+  {% if variants_query.results_count > 0 %}
+
+    {% assign suppliers_query = "suppliers" | db_find: company_id: params.company_id %}
+
+    {% if suppliers_query.results_count > 0 %}
+
+      {% assign suppliers         = suppliers_query.results %}
+      {% assign suppliers_orders  = nil | new_hash %}
+      {% assign variants          = variants_query.results %}
+      {% assign supplier_param    = "" | split: " " %}
+
+      {% for variant in variants %}
+
+        {% assign barcode         = variant.barcode | decrypt %}
+        {% assign supplier_param  = supplier_param | push_to_array: barcode %}
+
+      {% endfor %}
+
+      {% assign supplier_param = supplier_param | join: "," %}
+
+      {% for supplier in suppliers %}
+
+        {% if supplier.url != nil and supplier.url != "" %}
+
+          {% assign supplier_url = supplier.url %}
+
+        {% else %}
+
+          {% capture supplier_url %}https://{{ project.url }}/supplier_items.json?barcodes={{ supplier_param }}{% endcapture %}
+
+        {% endif %}
+
+        {% assign inventory_response = "inventory" | webhook: url: supplier_url %}
+
+        {% if inventory_response.code == 200 %}
+
+          {% assign items_query = "items" | db_find: company_id: params.company_id, supplier_id: supplier._id %}
+          {% assign items       = items_query.results | to_hash: "sku" %}
+
+          {% for response_item in inventory_response.body.items %}
+
+            {% assign response_sku      = response_item[0] | encrypt %}
+            {% assign response_name     = response_item[1].name | encrypt %}
+            {% assign response_barcode  = response_item[1].barcode | encrypt %}
+            {% assign response_stock    = response_item[1].stock %}
+            {% assign response_price    = response_item[1].price %}
+            {% assign item              = items[response_sku] %}
+
+            {% if item == nil %}
+
+              {% assign items_create   = "create_item" | db_insert_one: company_id: params.company_id, sku: response_sku, name: response_name, barcode: response_barcode, stock: response_stock, price: response_price, supplier_id: supplier._id %}
+
+              {% if items_create.created_count == 1 %}
+                {% assign created_items_count = created_items_count | plus: 1 %}
+              {% endif %}
+
+            {% else %}
+
+              {% if item.name == response_name and item.barcode == response_barcode and item.stock == response_stock and item.price == response_price %}
+              {% else %}
+                {% assign items_update = "update_item" | db_update_one: company_id: params.company_id, _id: item._id, name: response_name, barcode: response_barcode, stock: response_stock, price: response_price %}
+
+                {% if items_update.updated_count == 1 %}
+                  {% assign updated_items_count = updated_items_count | plus: 1 %}
+                {% endif %}
+
+              {% endif %}
+
+            {% endif %}
+          {% endfor %}
+
+          {% for item in items %}
+
+            {% assign sku = item[0] | decrypt %}
+
+            {% if inventory_response.body[sku] == nil %}
+
+              {% assign item_deletion = "soft_delete_item" | db_update_one: company_id: params.company_id, _id: item._id %}
+
+              {% if item_deletion.updated_count == 1 %}
+                {% assign deleted_items_count = deleted_items_count | plus: 1 %}
+              {% endif %}
+
+            {% endif %}
+
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+  {"created_items_count": "{{ created_items_count }}", "updated_items_count": "{{ updated_items_count }}", "deleted_items_count": "{{ deleted_items_count }}"}
+{% endif %}

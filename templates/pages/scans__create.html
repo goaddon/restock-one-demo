@@ -1,0 +1,56 @@
+{% if account != nil %}
+
+  {% assign suppliers_query   = "suppliers" | db_find: company_id: account._id, _id: params.supplier_id %}
+  {% assign supplier          = suppliers_query.results.first %}
+
+  {% if supplier != nil %}
+
+    {% assign barcode     = params.barcode | encrypt %}
+    {% assign items_query = "items" | db_find: company_id: account._id, supplier_id: supplier._id, barcode: barcode %}
+    {% assign item        = items_query.results.first %}
+
+    {% if item == nil %}
+
+      flashAlert("error", "{{ l.no_item }}");
+
+    {% elsif 0 > item.ordered %}
+
+      flashAlert("error", "{{ l.item_not_ordered }}");
+
+    {% else %}
+
+      {% assign variants_query  = "variants" | db_find: company_id: account._id, barcode: barcode %}
+      {% assign variant         = variants_query.results.first %}
+
+      {% if variant == nil %}
+
+        flashAlert("error", "{{ l.no_variant }}");
+
+      {% else %}
+
+        {% assign ordered         = item.ordered | minus: 1 %}
+        {% assign items_update    = "update_item" | db_update_one: company_id: account._id, _id: item._id, ordered: ordered %}
+
+        {% if items_update.matched_count != 1 %}
+
+          flashAlert("error", "{{ l.item_not_updated }}");
+
+        {% else %}
+
+          {% assign variants_update = "update_variant" | webhook: gofetch_url: project.addon_data.addon_5b9ff6463ab42f43522b30cf.url, gofetch_shop_api_token: project.secrets.gofetch_shop_api_token, variant_id: variant._id, stock_change: 1 %}
+
+          {% if variants_update.code != 200 %}
+
+            flashAlert("error", "{{ l.shop_api_not_updated }} {% if variants_update.body.error != nil and variants_update.body.error != '' %}. {{ variants_update.body.error.first.value }}{% endif %}");
+
+          {% else %}
+
+            flashAlert("success", "{{ l.success }}");
+
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+  $('input[name="barcode"]').val("");
+{% endif %}

@@ -1,0 +1,42 @@
+{% if account != nil %}
+
+  {% assign job = params.id | get_job %}
+
+  {% if job.data.results.size > 0 %}
+
+    {% assign barcodes = "" %}
+
+    {% for supplier in job.data.results %}
+      {% for item in supplier.items %}
+
+        {% capture barcodes %}{{ barcodes }} {{ item.barcode | encrypt }}{% endcapture %}
+
+      {% endfor %}
+    {% endfor %}
+
+    {% assign barcodes = barcodes | split: " " | uniq %}
+
+    {% assign variants_query = "variants" | db_find: company_id: account._id, barcodes: barcodes %}
+
+    {% if variants_query.results.size > 0 %}
+
+      {% assign product_ids = "" %}
+
+      {% for variant in variants_query.results %}
+
+        {% capture product_ids %}{{ product_ids }} {{ variant.product_id }}{% endcapture %}
+
+      {% endfor %}
+
+      {% assign product_ids     = product_ids | split: " " | uniq %}
+      {% assign products_query  = "products" | db_find: company_id: account._id, product_ids: product_ids %}
+
+    {% endif %}
+
+    {% assign variants = variants_query.results | to_hash: "barcode" %}
+    {% assign products = products_query.results | to_hash: "_id" %}
+
+  {% endif %}
+
+  {% include "item_order" %}
+{% endif %}

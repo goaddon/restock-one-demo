@@ -1,0 +1,8 @@
+{% if account != nil %}
+
+  {% assign variants_query     = "variants" | db_count: company_id: account._id %}
+  {% assign variants_count     = variants_query.results_count %}
+
+  {% include "restock" %}
+
+{% endif %}

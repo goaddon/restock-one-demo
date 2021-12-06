@@ -1,0 +1,7 @@
+<h5 class="mb-4">{{ l.headline }} {{ supplier.name }}</h5>
+<form data-id="create_scan" action="{{ 'scans__create' | path_for: format: 'js' }}" method="post" data-remote="true">
+  <div class="input-group">
+    <input class="form-control" type="text" name="barcode" placeholder="{{ l.placeholders.barcode }}" autofocus>
+  </div>
+  <input type="hidden" name="supplier_id" value="{{ supplier._id }}">
+</form>

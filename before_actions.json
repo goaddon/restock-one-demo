@@ -1,0 +1,8 @@
+{
+  "authenticate": {
+    "api": false
+  },
+  "container": {
+    "supplier_items__index": "api"
+  }
+}

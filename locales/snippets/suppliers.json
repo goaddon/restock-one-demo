@@ -1,0 +1,11 @@
+{
+  "en": {
+    "headline": "Suppliers",
+    "placeholders": {
+      "name": "Enter supplier name..."
+    },
+    "buttons": {
+      "create": "Create"
+    }
+  }
+}

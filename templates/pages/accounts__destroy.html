@@ -1,0 +1,19 @@
+{% assign items_deletion            = "destroy_items" | db_delete_many: company_id: account._id %}
+{% assign suppliers_deletion        = "destroy_suppliers" | db_delete_many: company_id: account._id %}
+{% assign account_deletion          = "destroy_account" | db_delete_one: _id: account._id %}
+
+{% assign account_id_attributes = "shadow_company_id company_id" | split: " " %}
+
+{% for account_id_attribute in account_id_attributes %}
+
+  {% assign query     = nil | new_hash: app_id: project.app_id %}
+  {% assign query     = query | push_to_hash: account_id_attribute, account._id %}
+
+  {% assign document  = nil | new_hash %}
+  {% assign document  = document | push_to_hash: account_id_attribute, nil %}
+
+  {% assign revoke_user_access = "revoke_access" | db_update_many: query: query, document: document %}
+
+{% endfor %}
+
+{"url": "{{ 'accounts__index' | path_for }}", "message": "{{ l.destroyed_account }}"}

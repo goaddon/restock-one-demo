@@ -1,0 +1,6 @@
+{
+  "en": {
+    "destroyed": "You have destroyed the supplier",
+    "not_destroyed": "The supplier could not be destroyed"
+  }
+}

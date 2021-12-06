@@ -1,0 +1,27 @@
+{
+  "destroy_items": {
+    "klass": "items",
+    "query": {
+      "company_id": "{{ company_id }}"
+    }
+  },
+  "destroy_suppliers": {
+    "klass": "suppliers",
+    "query": {
+      "company_id": "{{ company_id }}"
+    }
+  },
+  "destroy_account": {
+    "klass": "companies",
+    "query": {
+      "_id": "{{ _id }}"
+    }
+  },
+  "revoke_access": {
+    "klass": "users",
+    "query": "{{ query }}",
+    "document": {
+      "$unset": "{{ document }}"
+    }
+  }
+}

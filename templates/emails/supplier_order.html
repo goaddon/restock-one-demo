@@ -1,0 +1,23 @@
+{{ l.subject }}
+{{ l.greeting }} {{ params.supplier_name }},
+<p>{{ l.intro }}</p>
+<table style="width:100%;">
+  <thead>
+    <tr style="text-align:left;">
+      <th>{{ l.sku }}</th>
+      <th>{{ l.barcode }}</th>
+      <th>{{ l.name }}</th>
+      <th>{{ l.amount }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for supplier_order_line in params.supplier_order %}
+      <tr style="text-align:left;">
+        <td>{{ supplier_order_line.sku | decrypt }}</td>
+        <td>{{ supplier_order_line.barcode | decrypt }}</td>
+        <td>{{ supplier_order_line.name | decrypt }}</td>
+        <td>{{ supplier_order_line.amount }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

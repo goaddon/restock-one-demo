@@ -1,0 +1,13 @@
+{% if account != nil %}
+
+  {% assign suppliers_query   = "suppliers" | db_find: company_id: account._id, _id: params.id %}
+  {% assign supplier          = suppliers_query.results.first %}
+
+  {% if supplier == nil %}
+    <h5 class="mb-4">{{ l.not_found }}</h5>
+  {% else %}
+
+    {% include "supplier" %}
+
+  {% endif %}
+{% endif %}
