@@ -2,10 +2,10 @@
 
   {% assign suppliers_insertion = "create_supplier" | db_insert_one: company_id: account._id, name: params.name %}
 
-  {% if suppliers_insertion._id == nil %}
+  {% if suppliers_insertion.created_count != 1 %}
     flashAlert("error", "{{ l.not_created }}");
   {% else %}
-    {% assign supplier_id   = suppliers_insertion._id %}
+    {% assign supplier_id   = suppliers_insertion.document._id %}
     {% assign supplier_name = params.name %}
     $('[data-id="create_supplier"]').find(":input[name='name']").val("");
     $('[data-id="suppliers"]').prepend('{% include "suppliers/supplier" %}');
